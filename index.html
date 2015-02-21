@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>hg</title>
+  <style>
+    svg {border:1px solid #ccc;}
+    rect {fill: none; stroke-width:2; stroke: #000;}
+    line {stroke-dasharray: 4,4;}
+    g.join {stroke: #000;stroke-width:2;}
+  </style>
+</head>
+<body>
+
+<script src="bower_components/d3/d3.min.js"></script>
+<script>
+  var width = 960,
+      height = 750,
+
+      hg_width = 600,
+      hg_height = 80;
+
+  var svg = d3.select('body')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  svg
+    .append('defs')
+      .append('clipPath')
+      .attr('id', 'hg')
+        .append('rect')
+        .attr('width', hg_width)
+        .attr('height', hg_height)
+        .attr('x', (width - hg_width)/2)
+        .attr('y', (height - hg_height)/2)
+
+  var wavegroup = svg.append('g')
+    .attr('clip-path','url(#hg)')
+
+  var hg = svg.append('rect')
+    .attr('width', hg_width)
+    .attr('height', hg_height)
+    .attr('x', (width - hg_width)/2)
+    .attr('y', (height - hg_height)/2)
+
+
+
+
+  var In = svg.append('g')
+    .attr('class','join')
+
+  In.append('line')
+    .attr('x1', 0)
+    .attr('x2', (width - hg_width)/2)
+    .attr('y1', (height)/2)
+    .attr('y2', (height)/2)
+
+  In.append('circle')
+    .attr('cx', (width - hg_width)/2)
+    .attr('cy', (height)/2)
+    .attr('r', 10)
+
+
+  var Out = svg.append('g')
+    .attr('class','join')
+
+  Out.append('line')
+    .attr('x1', ((width - hg_width)/2) + hg_width)
+    .attr('x2', width)
+    .attr('y1', (height)/2)
+    .attr('y2', (height)/2)
+
+  Out.append('circle')
+    .attr('cx', ((width - hg_width)/2) + hg_width)
+    .attr('cy', (height)/2)
+    .attr('r', 10)
+
+
+
+// setInterval(function(){
+
+function ping(){
+
+  In
+    .transition()
+    .style('stroke', '#08f')
+    .style('fill', '#08f')
+    .transition()
+    .style('stroke', '#000')
+    .style('fill', '#000')
+
+  Out
+    .transition()
+    .delay(2850)
+    .style('stroke', '#f08')
+    .style('fill', '#f08')
+    .transition()
+    .style('stroke', '#000')
+    .style('fill', '#000')
+
+
+
+  wavegroup
+    .append('circle')
+
+    .style('fill', '#fff')
+    .style('stroke', '#000')
+    .style('stroke-width', '4')
+
+    .attr('r', 0)
+    .attr('cx', (width - hg_width)/2)
+    .attr('cy', (height)/2)
+    .transition()
+    // .delay(500)
+    .duration(3000)
+    .ease('ease-in')
+    .attr('r', hg_width)
+    .remove();
+
+
+
+  setTimeout(ping, Math.random()*2000)
+}
+
+// start some pings
+for(var i = 5; ping() || i--;);
+
+</script>
+</body>
+</html>
