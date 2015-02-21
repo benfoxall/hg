@@ -6,8 +6,11 @@
   <style>
     svg {border:1px solid #ccc;}
     rect {fill: none; stroke-width:2; stroke: #000;}
-    line {stroke-dasharray: 4,4;}
-    g.join {stroke: #000;stroke-width:2;}
+    polyline {fill:none;}
+    g.join {stroke: #000; stroke-width:2; stroke-dasharray: 4,4;}
+    g.join circle {stroke-width:0;}
+    text {stroke: none; fill: #000;font-family: sans-serif;text-anchor:middle;font-size: 25px;
+-webkit-font-smoothing: antialiased;}
   </style>
 </head>
 <body>
@@ -19,6 +22,11 @@
 
       hg_width = 600,
       hg_height = 80;
+
+      hg_left   = (width - hg_width)/2,
+      hg_right  = hg_left + hg_width,
+      hg_top    = (height - hg_height)/2,
+      hg_bottom = hg_top + hg_height;
 
   var svg = d3.select('body')
     .append('svg')
@@ -32,19 +40,20 @@
         .append('rect')
         .attr('width', hg_width)
         .attr('height', hg_height)
-        .attr('x', (width - hg_width)/2)
-        .attr('y', (height - hg_height)/2)
+        .attr('x', hg_left)
+        .attr('y', hg_top)
 
   var wavegroup = svg.append('g')
     .attr('clip-path','url(#hg)')
+    .style('fill', '#fff')
+    .style('stroke', '#000')
+    .style('stroke-width', '4')
 
   var hg = svg.append('rect')
     .attr('width', hg_width)
     .attr('height', hg_height)
-    .attr('x', (width - hg_width)/2)
-    .attr('y', (height - hg_height)/2)
-
-
+    .attr('x', hg_left)
+    .attr('y', hg_top)
 
 
   var In = svg.append('g')
@@ -52,79 +61,135 @@
 
   In.append('line')
     .attr('x1', 0)
-    .attr('x2', (width - hg_width)/2)
-    .attr('y1', (height)/2)
-    .attr('y2', (height)/2)
+    .attr('x2', hg_left)
+    .attr('y1', height/2)
+    .attr('y2', height/2)
 
   In.append('circle')
-    .attr('cx', (width - hg_width)/2)
-    .attr('cy', (height)/2)
+    .attr('cx', hg_left)
+    .attr('cy', height/2)
     .attr('r', 10)
+
+  In.append('text')
+    .text("")
+    .attr('x', hg_left * .5)
+    .attr('y', (height/2)-10)
 
 
   var Out = svg.append('g')
     .attr('class','join')
 
   Out.append('line')
-    .attr('x1', ((width - hg_width)/2) + hg_width)
+    .attr('x1', hg_right)
     .attr('x2', width)
-    .attr('y1', (height)/2)
-    .attr('y2', (height)/2)
+    .attr('y1', height/2)
+    .attr('y2', height/2)
 
   Out.append('circle')
-    .attr('cx', ((width - hg_width)/2) + hg_width)
-    .attr('cy', (height)/2)
+    .attr('cx', hg_right)
+    .attr('cy', height/2)
     .attr('r', 10)
 
 
+  Out.append('text')
+    .text("")
+    .attr('x', hg_right + hg_left/2)
+    .attr('y', (height/2)-10)
 
-// setInterval(function(){
 
-function ping(){
+  var Connect = svg.append('g')
+    .attr('class','join')
+    .style('display', 'none')
+
+  Connect.append('polyline')
+    .attr('points', [
+      hg_right + hg_left/2, height/2,
+      hg_right + hg_left/2, (height/2) + (hg_top/2),
+      hg_left/2, (height/2) + (hg_top/2),
+      hg_left/2, height/2
+    ].map(Math.floor).join(' '))
+
+
+var _loop;
+
+
+function send(){
+
+  var on = {stroke: '#08f', fill: '#08f', 'stroke-dasharray':'none'},
+      off = {stroke: '#000', fill: '#000', 'stroke-dasharray':'4,4'};
 
   In
     .transition()
-    .style('stroke', '#08f')
-    .style('fill', '#08f')
+    .style(on)
     .transition()
-    .style('stroke', '#000')
-    .style('fill', '#000')
+    .style(off)
+
+  Connect
+    .transition()
+    .delay(3000)
+    .style(on)
+    .transition()
+    .style(off)
 
   Out
     .transition()
-    .delay(2850)
-    .style('stroke', '#f08')
-    .style('fill', '#f08')
+    .delay(3000)
+    .style(on)
     .transition()
-    .style('stroke', '#000')
-    .style('fill', '#000')
-
+    .style(off)
 
 
   wavegroup
     .append('circle')
-
-    .style('fill', '#fff')
-    .style('stroke', '#000')
-    .style('stroke-width', '4')
-
     .attr('r', 0)
-    .attr('cx', (width - hg_width)/2)
-    .attr('cy', (height)/2)
+    .attr('cx', hg_left)
+    .attr('cy', height/2)
     .transition()
-    // .delay(500)
-    .duration(3000)
+    .duration(3100)
     .ease('ease-in')
     .attr('r', hg_width)
-    .remove();
+    .remove()
 
-
-
-  setTimeout(ping, Math.random()*2000)
+  _loop && setTimeout(send, 3000)
 }
 
 // start some pings
-for(var i = 5; ping() || i--;);
+// for(var i = 5; setTimeout(send, Math.random()*2000) && i--;);
+
+
+function sendString(str){
+
+  var bin = str
+    .split('')
+    .map(function(s){
+      var b = s.charCodeAt(0).toString(2);
+      while(b.length < 7) b = '0' + b;
+      return b
+    })
+    .join('');
+
+  var period = 40;
+
+  bin
+    .split('')
+    .forEach(function(b, i){
+      +b && setTimeout(send, i * period)
+    })
+
+
+  In.select('text').text(str)
+
+  setTimeout(function(){
+    Out.select('text').text(str)
+  }, (period*bin.length)+3000)
+
+}
+
+
+function loop(v){
+  _loop = !!v
+  Connect.style('display', _loop ? 'inline' : 'none')
+}
 
 </script>
 </body>
