@@ -14,6 +14,11 @@
   </style>
 </head>
 <body>
+<div class="actions">
+<button onclick="state('pulses')">pulses</button>
+<button onclick="state('text')">text</button>
+<button onclick="state('looped')">text+feedback</button>
+</div>
 
 <script src="bower_components/d3/d3.min.js"></script>
 <script>
@@ -99,7 +104,7 @@
 
   var Connect = svg.append('g')
     .attr('class','join')
-    .style('display', 'none')
+    .style('opacity', '0')
 
   Connect.append('polyline')
     .attr('points', [
@@ -112,49 +117,44 @@
 
 var _loop;
 
-
 function send(){
 
-  var on = {stroke: '#08f', fill: '#08f', 'stroke-dasharray':'none'},
-      off = {stroke: '#000', fill: '#000', 'stroke-dasharray':'4,4'};
+  on(In)
 
-  In
-    .transition()
-    .style(on)
-    .transition()
-    .style(off)
-
-  Connect
-    .transition()
-    .delay(3000)
-    .style(on)
-    .transition()
-    .style(off)
-
-  Out
-    .transition()
-    .delay(3000)
-    .style(on)
-    .transition()
-    .style(off)
-
-
-  wavegroup
+  return wavegroup
     .append('circle')
     .attr('r', 0)
     .attr('cx', hg_left)
     .attr('cy', height/2)
     .transition()
-    .duration(3100)
+    .duration(3000)
     .ease('ease-in')
     .attr('r', hg_width)
+    .each('end', function(){
+      on(Out)
+      _loop && on(Connect) && send()
+    })
     .remove()
 
-  _loop && setTimeout(send, 3000)
+  // flash element on
+  function on(g){
+    return g
+      .style({stroke: '#08f', fill: '#08f'})
+      .transition()
+      .duration(50)
+      .each('end', function(){
+        g.style({stroke: '#000', fill: '#000'})
+      })
+  }
+  
 }
 
-// start some pings
-// for(var i = 5; setTimeout(send, Math.random()*2000) && i--;);
+// cancel
+wavegroup.selectAll('circle')
+  .transition()
+  .attr('stroke','#fff')
+  .attr('r',function(){return +this.getAttribute('r') + 40})
+  .remove()
 
 
 function sendString(str){
@@ -188,7 +188,7 @@ function sendString(str){
 
 function loop(v){
   _loop = !!v
-  Connect.style('display', _loop ? 'inline' : 'none')
+  Connect.transition().style('opacity', _loop ? '1' : '0')
 }
 
 </script>
